@@ -60,6 +60,8 @@ class StreamSPI : public Stream
 	virtual int peek(void);
 	virtual int read(void);
 	virtual void flush(void);
+	/* From Print.h */
+	virtual size_t write(uint8_t val);
 };
 
 #endif // HardwareSPIstream_h

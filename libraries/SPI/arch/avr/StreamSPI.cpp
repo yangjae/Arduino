@@ -187,8 +187,10 @@ void StreamSPI::flush(void)
 {
 
 }
+/* * * Print methods implementations * * */
+size_t StreamSPI::write(uint8_t val)
 {
-
+	return 0;
 }
 /* Preinstantiate objects */
 StreamSPI StreamSPI0();
