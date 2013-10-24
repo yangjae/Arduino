@@ -27,6 +27,11 @@
 
 #define SPI_DEFAULT_BUFFER_SIZE	64
 
+enum buffer_type {
+	TX_BUFFER,
+	RX_BUFFER,
+};
+
 class StreamSPI : public Stream
 {
 	protected:
@@ -34,10 +39,10 @@ class StreamSPI : public Stream
 	uint8_t *rx_buffer;	/* Allocated on begin(), freed on end() */
 	uint8_t *tx_buffer;	/* Allocated on begin(), freed on end() */
 	unsigned int buffer_size;
-	unsigned int rx_head;
-	unsigned int tx_head;
-	unsigned int rx_tail;
-	unsigned int tx_tail;
+	uint8_t *rx_head;
+	uint8_t *tx_head;
+	uint8_t *rx_tail;
+	uint8_t *tx_tail;
 
 	virtual void raiseInterrupt();
 
@@ -47,8 +52,8 @@ class StreamSPI : public Stream
 	int begin(unsigned int buf_size, unsigned int spi_mode);
 	void end();
 
-	int storeRX(uint8_t val);
-	uint8_t retrieveTX();
+	int store(enum buffer_type type, uint8_t val);
+	uint8_t retrieve(enum buffer_type type);
 
 	/* From Stream.h */
 	virtual int available(void);

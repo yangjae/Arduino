@@ -53,10 +53,10 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	memset(tx_buffer, 0, buf_size);
 
 	/* Reset buffer current position */
-	rx_head = 0;
-	tx_head = 0;
-	rx_tail = 0;
-	tx_tail = 0;
+	rx_head = rx_buffer;
+	tx_head = tx_buffer;
+	rx_tail = rx_buffer;
+	tx_tail = tx_buffer;
 
 	/* * * Configure SPI as Slave * * */
 	pinMode(MISO, OUTPUT);	/* We have to send on master in, *slave out* */
@@ -97,30 +97,51 @@ void StreamSPI::raiseInterrupt()
 }
 
 
-int StreamSPI::storeRX(uint8_t val)
+int StreamSPI::store(enum buffer_type type, uint8_t val)
 {
+	uint8_t *buf, *head, *tail;
+
+	if (type == RX_BUFFER) {
+		buf = rx_buffer;
+		head = rx_head;
+		tail = rx_tail;
+	} else {
+		buf = tx_buffer;
+		head = tx_head;
+		tail = tx_tail;
+	}
+
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
 	 */
-	if (rx_head == rx_tail - 1)
+	if (head == tail - 1)
 		return -1;	/* Buffer is full */
 
-	rx_buffer[rx_head] = val;
-
-	rx_head = rx_head < buffer_size - 1 ? rx_head + 1 : 0;
+	*head = val;
+	head = head < buf + buffer_size - 1 ? head + 1 : buf;
 }
 
-uint8_t StreamSPI::retrieveTX()
+uint8_t StreamSPI::retrieve(enum buffer_type type)
 {
+	uint8_t *buf, *head, *tail;
 	uint8_t val;
 
-	if (tx_head == tx_tail)
+	if (type == RX_BUFFER) {
+		buf = rx_buffer;
+		head = rx_head;
+		tail = rx_tail;
+	} else {
+		buf = tx_buffer;
+		head = tx_head;
+		tail = tx_tail;
+	}
+
+	if (head == tail)
 		return 0;	/* There are no byte to send */
 
-	val = tx_buffer[tx_tail];
-
-	tx_tail = tx_tail < buffer_size - 1 ? tx_tail + 1 : 0;
+	val = *tail;
+	tail = tail < buf + buffer_size - 1 ? tail + 1 : buf;
 
 	return 	val;
 }
@@ -141,8 +162,8 @@ ISR (SPI_STC_vect)
 	}
 
 	/* Retrieve the next byte to send and store the incoming byte */
-	SPDR = StreamSPI0.retrieveTX();
-	err = StreamSPI0.storeRX(SPDR);
+	SPDR = StreamSPI0.retrieve(TX_BUFFER);
+	err = StreamSPI0.store(RX_BUFFER, SPDR);
 }
 #endif
 
