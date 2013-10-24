@@ -90,6 +90,7 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 
 void StreamSPI::end()
 {
+	spi.detachInterrupt();
 	free(tx_buffer);
 	free(rx_buffer);
 }
