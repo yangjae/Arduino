@@ -75,4 +75,6 @@ class StreamSPI : public Stream
 	virtual size_t write(uint8_t val);
 };
 
+extern StreamSPI StreamSPI0;
+
 #endif // HardwareSPIstream_h
