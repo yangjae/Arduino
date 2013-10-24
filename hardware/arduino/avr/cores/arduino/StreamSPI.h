@@ -21,12 +21,26 @@
 #ifndef HardwareSPIstream_h
 #define HardwareSPIstream_h
 
-
+#include <inttypes.h>
+#include <SPI.h>	/* FIXME not sure about this */
 #include "Stream.h"
+
+#define SPI_DEFAULT_BUFFER_SIZE	64
 
 class StreamSPI : public Stream
 {
+	protected:
+	SPIClass spi;
+	uint8_t *rx_buffer;	/* Allocated on begin(), freed on end() */
+	uint8_t *tx_buffer;	/* Allocated on begin(), freed on end() */
+	unsigned int rx_pos;
+	unsigned int tx_pos;
 
+	public:
+	StreamSPI(SPIClass spidev);
+	int begin();
+	int begin(unsigned int buf_size, unsigned int spi_mode);
+	void end();
 };
 
 #endif // HardwareSPIstream_h
