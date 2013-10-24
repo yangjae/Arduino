@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <errno.h>
 #include "StreamSPI.h"
 
 
@@ -37,14 +36,14 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	int err;
 
 	/* Allocates RX and TX buffers */
-	rx_buffer = malloc(buf_size);
+	rx_buffer = (uint8_t *) malloc(buf_size);
 	if (!rx_buffer)
-		return -ENOMEM;
+		return -1;
 
-	tx_buffer = malloc(buf_size);
+	tx_buffer = (uint8_t *) malloc(buf_size);
 	if (!rx_buffer) {
 		free(rx_buffer);
-		return -ENOMEM;
+		return -1;
 	}
 
 	/* Clean up memory */
