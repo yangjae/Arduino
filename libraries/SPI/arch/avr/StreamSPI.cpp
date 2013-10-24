@@ -179,7 +179,7 @@ int StreamSPI::available(void)
 
 int StreamSPI::peek(void)
 {
-	return 0;
+	return *tx_tail;
 }
 
 int StreamSPI::read(void)
