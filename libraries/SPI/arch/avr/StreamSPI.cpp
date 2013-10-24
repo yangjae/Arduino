@@ -21,7 +21,7 @@
 #include "StreamSPI.h"
 
 /* Preinstantiate objects */
-StreamSPI StreamSPI0();
+StreamSPI StreamSPI0(SPI);
 
 StreamSPI::StreamSPI(SPIClass spidev)
 {
