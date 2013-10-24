@@ -36,6 +36,8 @@ class StreamSPI : public Stream
 	unsigned int rx_pos;
 	unsigned int tx_pos;
 
+	virtual void raiseInterrupt();
+
 	public:
 	StreamSPI(SPIClass spidev);
 	int begin();

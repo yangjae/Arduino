@@ -68,6 +68,15 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	spi.attachInterrupt();
 	PORTB &= ~(0x1);	/* Enable pull-up on SS signal */
 
+	/* * * Configure Interrupt for main processor */
+	ACSR  &= (~0x04); /* Disable Analog Comparator interrupt
+	                     to prevent interrupt during disable */
+	ACSR  &= (~0x80); /* Disable Analog Comparator on PE6 */
+	EIMSK &= (~0x40); /* Disable INT6 on PE6 */
+
+	PORTE &= (~0x40); /* Set PE6 to 0 */
+	DDRE  |= (0x40);  /* Set PE6 as Output */
+
 	return 0;
 }
 
@@ -75,4 +84,10 @@ void StreamSPI::end()
 {
 	free(tx_buffer);
 	free(rx_buffer);
+}
+
+void StreamSPI::raiseInterrupt()
+{
+	PORTE |= 0x40;
+	PORTE &= ~0x40;
 }
