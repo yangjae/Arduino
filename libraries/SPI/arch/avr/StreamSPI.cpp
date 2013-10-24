@@ -117,11 +117,13 @@ int StreamSPI::store(enum buffer_type type, uint8_t val)
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
 	 */
-	if (head == tail - 1)
-		return -1;	/* Buffer is full */
+	if (head == tail - 1 || (tail == buf && head == buf + buffer_size - 1))
+		return 0;	/* Buffer is full */
 
 	*head = val;
 	head = head < buf + buffer_size - 1 ? head + 1 : buf;
+
+	return 1;
 }
 
 uint8_t StreamSPI::retrieve(enum buffer_type type)
