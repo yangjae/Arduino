@@ -20,6 +20,8 @@
 
 #include "StreamSPI.h"
 
+/* Preinstantiate objects */
+StreamSPI StreamSPI0();
 
 StreamSPI::StreamSPI(SPIClass spidev)
 {
@@ -192,5 +194,3 @@ size_t StreamSPI::write(uint8_t val)
 {
 	return 0;
 }
-/* Preinstantiate objects */
-StreamSPI StreamSPI0();
