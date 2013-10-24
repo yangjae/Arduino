@@ -33,6 +33,7 @@ class StreamSPI : public Stream
 	SPIClass spi;
 	uint8_t *rx_buffer;	/* Allocated on begin(), freed on end() */
 	uint8_t *tx_buffer;	/* Allocated on begin(), freed on end() */
+	unsigned int buffer_size;
 	unsigned int rx_head;
 	unsigned int tx_head;
 	unsigned int rx_tail;

@@ -35,6 +35,8 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 {
 	int err;
 
+	buffer_size = buf_size;
+
 	/* Allocates RX and TX buffers */
 	rx_buffer = (uint8_t *) malloc(buf_size);
 	if (!rx_buffer)
