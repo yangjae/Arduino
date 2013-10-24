@@ -83,6 +83,8 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	PORTE &= (~0x40); /* Set PE6 to 0 */
 	DDRE  |= (0x40);  /* Set PE6 as Output */
 
+	tx_flag = 0;
+
 	return 0;
 }
 
@@ -94,14 +96,25 @@ void StreamSPI::end()
 
 void StreamSPI::raiseInterrupt()
 {
+	tx_flag |= SPI_TX_FLAG_REQ_TRANS;
 	PORTE |= 0x40;
 	PORTE &= ~0x40;
+}
+
+void StreamSPI::waitRequestByteTransfer()
+{
+	/* Raise an interrupt to request transmission */
+	raiseInterrupt();
+
+	/* Wait until transmission occur */
+	while (tx_flag & SPI_TX_FLAG_REQ_TRANS)
+		;
 }
 
 
 int StreamSPI::store(enum buffer_type type, uint8_t val)
 {
-	uint8_t *buf, *head, *tail;
+	volatile uint8_t *buf, *head, *tail;
 
 	if (type == RX_BUFFER) {
 		buf = rx_buffer;
@@ -128,7 +141,7 @@ int StreamSPI::store(enum buffer_type type, uint8_t val)
 
 uint8_t StreamSPI::retrieve(enum buffer_type type)
 {
-	uint8_t *buf, *head, *tail;
+	volatile uint8_t *buf, *head, *tail;
 	uint8_t val;
 
 	if (type == RX_BUFFER) {
@@ -139,6 +152,13 @@ uint8_t StreamSPI::retrieve(enum buffer_type type)
 		buf = tx_buffer;
 		head = tx_head;
 		tail = tx_tail;
+
+		/*
+		 * When we retrieve a value from he transmission buffer it to
+		 * send it. So here we can clear the transmission request flag
+		 * because we are going to do it.
+		 */
+		tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
 	}
 
 	if (head == tail)
@@ -190,10 +210,23 @@ int StreamSPI::read(void)
 
 void StreamSPI::flush(void)
 {
+	unsigned int tmp;
 
+	/* Continue transmission until buffer is empty */
+	while (tx_head != tx_tail)
+		waitRequestByteTransfer();
 }
 /* * * Print methods implementations * * */
 size_t StreamSPI::write(uint8_t val)
 {
-	return 0;
+	int n;
+
+	do {
+		/* Try to store the value in the buffer */
+		n = store(TX_BUFFER, val);
+		if (n == 0)	/* TX buffer is full, transmit something */
+			waitRequestByteTransfer();
+	} while(n == 0);
+
+	return 1;
 }

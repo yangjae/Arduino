@@ -27,6 +27,8 @@
 
 #define SPI_DEFAULT_BUFFER_SIZE	64
 
+#define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
+
 enum buffer_type {
 	TX_BUFFER,
 	RX_BUFFER,
@@ -46,12 +48,14 @@ class StreamSPI : public Stream
 	 * head == tail     ----> the buffer is empty
 	 * head == tail + 1 ----> the buffer is full
 	 */
-	uint8_t *rx_head;
-	uint8_t *tx_head;
-	uint8_t *rx_tail;
-	uint8_t *tx_tail;
+	volatile uint8_t *rx_head;
+	volatile uint8_t *tx_head;
+	volatile uint8_t *rx_tail;
+	volatile uint8_t *tx_tail;
 
+	volatile unsigned int tx_flag;
 	virtual void raiseInterrupt();
+	virtual void waitRequestByteTransfer();
 
 	public:
 	StreamSPI(SPIClass spidev);
