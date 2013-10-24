@@ -22,7 +22,7 @@
 #define HardwareSPIstream_h
 
 #include <inttypes.h>
-#include <SPI.h>	/* FIXME not sure about this */
+#include "SPI_Class.h"
 #include "Stream.h"
 
 #define SPI_DEFAULT_BUFFER_SIZE	64
