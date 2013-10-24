@@ -99,12 +99,30 @@ void StreamSPI::raiseInterrupt()
 
 int StreamSPI::storeRX(uint8_t val)
 {
-	rx_buffer[rx_head++] = val;
+	/*
+	 * FIXME here we can loose bytes because buffer is full and we cannot
+	 * do anything to consume it. It is duty of the program to consume it
+	 */
+	if (rx_head == rx_tail - 1)
+		return -1;	/* Buffer is full */
+
+	rx_buffer[rx_head] = val;
+
+	rx_head = rx_head < buffer_size - 1 ? rx_head + 1 : 0;
 }
 
 uint8_t StreamSPI::retrieveTX()
 {
-	return 	tx_buffer[tx_head++];
+	uint8_t val;
+
+	if (tx_head == tx_tail)
+		return 0;	/* There are no byte to send */
+
+	val = tx_buffer[tx_tail];
+
+	tx_tail = tx_tail < buffer_size - 1 ? tx_tail + 1 : 0;
+
+	return 	val;
 }
 
 /*
