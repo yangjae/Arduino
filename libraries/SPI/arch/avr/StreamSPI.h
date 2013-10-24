@@ -46,6 +46,12 @@ class StreamSPI : public Stream
 
 	int storeRX(uint8_t val);
 	uint8_t retrieveTX();
+
+	/* From Stream.h */
+	virtual int available(void);
+	virtual int peek(void);
+	virtual int read(void);
+	virtual void flush(void);
 };
 
 #endif // HardwareSPIstream_h

@@ -124,5 +124,28 @@ ISR (SPI_STC_vect)
 }
 #endif
 
+/* * * Stream methods implementations * * */
+int StreamSPI::available(void)
+{
+	return 0;
+}
+
+int StreamSPI::peek(void)
+{
+	return 0;
+}
+
+int StreamSPI::read(void)
+{
+	return 0;
+}
+
+void StreamSPI::flush(void)
+{
+
+}
+{
+
+}
 /* Preinstantiate objects */
 StreamSPI StreamSPI0();
