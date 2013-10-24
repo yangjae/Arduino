@@ -172,7 +172,7 @@ ISR (SPI_STC_vect)
 /* * * Stream methods implementations * * */
 int StreamSPI::available(void)
 {
-	return 0;
+	return (rx_tail != rx_head);
 }
 
 int StreamSPI::peek(void)
