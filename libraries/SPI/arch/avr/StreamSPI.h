@@ -39,6 +39,13 @@ class StreamSPI : public Stream
 	uint8_t *rx_buffer;	/* Allocated on begin(), freed on end() */
 	uint8_t *tx_buffer;	/* Allocated on begin(), freed on end() */
 	unsigned int buffer_size;
+	/*
+	 * head: is where we put a value
+	 * tail: is where we get a value
+	 *
+	 * head == tail     ----> the buffer is empty
+	 * head == tail + 1 ----> the buffer is full
+	 */
 	uint8_t *rx_head;
 	uint8_t *tx_head;
 	uint8_t *rx_tail;
