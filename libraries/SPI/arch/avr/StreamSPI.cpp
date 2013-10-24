@@ -51,8 +51,10 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	memset(tx_buffer, 0, buf_size);
 
 	/* Reset buffer current position */
-	rx_pos = 0;
-	tx_pos = 0;
+	rx_head = 0;
+	tx_head = 0;
+	rx_tail = 0;
+	tx_tail = 0;
 
 	/* * * Configure SPI as Slave * * */
 	pinMode(MISO, OUTPUT);	/* We have to send on master in, *slave out* */
@@ -95,12 +97,12 @@ void StreamSPI::raiseInterrupt()
 
 int StreamSPI::storeRX(uint8_t val)
 {
-	rx_buffer[rx_pos++] = val;
+	rx_buffer[rx_head++] = val;
 }
 
 uint8_t StreamSPI::retrieveTX()
 {
-	return 	tx_buffer[tx_pos++];
+	return 	tx_buffer[tx_head++];
 }
 
 /*
