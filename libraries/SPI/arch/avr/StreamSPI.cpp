@@ -184,7 +184,8 @@ int StreamSPI::peek(void)
 
 int StreamSPI::read(void)
 {
-	return 0;
+	/* FIXME HardwareSerial return -1 when empty, not 0 (EOF) */
+	return retrieve(RX_BUFFER);
 }
 
 void StreamSPI::flush(void)
