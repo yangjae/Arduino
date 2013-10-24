@@ -91,3 +91,38 @@ void StreamSPI::raiseInterrupt()
 	PORTE |= 0x40;
 	PORTE &= ~0x40;
 }
+
+
+int StreamSPI::storeRX(uint8_t val)
+{
+	rx_buffer[rx_pos++] = val;
+}
+
+uint8_t StreamSPI::retrieveTX()
+{
+	return 	tx_buffer[tx_pos++];
+}
+
+/*
+ * Each time a byte transfer is complete, the AVR invokes this
+ * interrupt which stores the incoming byte and write the next
+ * byte to transfer to the master
+ */
+#ifdef SPI_STC_vect
+ISR (SPI_STC_vect)
+{
+	int err;
+
+	/* Do not handle interrupt on SPI collision */
+	if (SPSR & 0x40) {
+		return;
+	}
+
+	/* Retrieve the next byte to send and store the incoming byte */
+	SPDR = StreamSPI0.retrieveTX();
+	err = StreamSPI0.storeRX(SPDR);
+}
+#endif
+
+/* Preinstantiate objects */
+StreamSPI StreamSPI0();

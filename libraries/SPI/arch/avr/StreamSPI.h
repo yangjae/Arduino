@@ -43,6 +43,9 @@ class StreamSPI : public Stream
 	int begin();
 	int begin(unsigned int buf_size, unsigned int spi_mode);
 	void end();
+
+	int storeRX(uint8_t val);
+	uint8_t retrieveTX();
 };
 
 #endif // HardwareSPIstream_h
