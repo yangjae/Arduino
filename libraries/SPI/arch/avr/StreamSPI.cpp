@@ -19,6 +19,7 @@
  */
 
 #include "StreamSPI.h"
+#define DEBUG 1
 
 /* Preinstantiate objects */
 StreamSPI StreamSPI0(SPI);
@@ -30,6 +31,9 @@ StreamSPI::StreamSPI(SPIClass spidev)
 
 int StreamSPI::begin()
 {
+	#if DEBUG
+	Serial.begin(250000);
+	#endif
 	return StreamSPI::begin(SPI_DEFAULT_BUFFER_SIZE, SPI_MODE0);
 }
 
@@ -113,7 +117,7 @@ void StreamSPI::waitRequestByteTransfer()
 }
 
 
-int StreamSPI::storeTX(uint8_t val)
+int StreamSPI::storeRX(uint8_t val)
 {
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
@@ -122,13 +126,24 @@ int StreamSPI::storeTX(uint8_t val)
 	if (rx_head == rx_tail - 1 || (rx_tail == rx_buffer && rx_head == rx_buffer + buffer_size - 1))
 		return 0;	/* Buffer is full */
 
+	#if DEBUG
+	Serial.println((unsigned long)rx_head, HEX);
+	Serial.println((unsigned long)rx_tail, HEX);
+	Serial.println("rx s - - - ");
+	#endif
+
 	*rx_head = val;
 	rx_head = rx_head < rx_buffer + buffer_size - 1 ? rx_head + 1 : rx_buffer;
 
+	#if DEBUG
+	Serial.println((unsigned long)rx_head, HEX);
+	Serial.println((unsigned long)rx_tail, HEX);
+	Serial.println("rx s - - - - - - ");
+	#endif
 	return 1;
 }
 
-int StreamSPI::storeRX(uint8_t val)
+int StreamSPI::storeTX(uint8_t val)
 {
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
@@ -137,9 +152,20 @@ int StreamSPI::storeRX(uint8_t val)
 	if (tx_head == tx_tail - 1 || (tx_tail == tx_buffer && tx_head == tx_buffer + buffer_size - 1))
 		return 0;	/* Buffer is full */
 
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("tx s - - - ");
+	#endif
+
 	*tx_head = val;
 	tx_head = tx_head < tx_buffer + buffer_size - 1 ? tx_head + 1 : tx_buffer;
 
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("tx s - - - - - - ");
+	#endif
 	return 1;
 }
 
@@ -157,8 +183,20 @@ uint8_t StreamSPI::retrieveTX()
 	if (tx_head == tx_tail)
 		return 0;	/* There are no byte to send */
 
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("tx r - - - ");
+	#endif
+
 	val = *tx_tail;
 	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
+
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("tx r - - - - - - ");
+	#endif
 
 	return 	val;
 }
@@ -170,8 +208,20 @@ uint8_t StreamSPI::retrieveRX()
 	if (rx_head == rx_tail)
 		return 0;	/* There are no byte to send */
 
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("rx r- - - ");
+	#endif
+
 	val = *rx_tail;
 	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
+
+	#if DEBUG
+	Serial.println((unsigned long)tx_head, HEX);
+	Serial.println((unsigned long)tx_tail, HEX);
+	Serial.println("rx r- - - - - - ");
+	#endif
 
 	return 	val;
 }
