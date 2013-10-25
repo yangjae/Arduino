@@ -63,8 +63,10 @@ class StreamSPI : public Stream
 	int begin(unsigned int buf_size, unsigned int spi_mode);
 	void end();
 
-	int store(enum buffer_type type, uint8_t val);
-	uint8_t retrieve(enum buffer_type type);
+	int storeTX(uint8_t val);
+	uint8_t retrieveTX();
+	int storeRX(uint8_t val);
+	uint8_t retrieveRX();
 
 	/* From Stream.h */
 	virtual int available(void);

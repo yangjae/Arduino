@@ -113,60 +113,65 @@ void StreamSPI::waitRequestByteTransfer()
 }
 
 
-int StreamSPI::store(enum buffer_type type, uint8_t val)
+int StreamSPI::storeTX(uint8_t val)
 {
-	volatile uint8_t *buf, *head, *tail;
-
-	if (type == RX_BUFFER) {
-		buf = rx_buffer;
-		head = rx_head;
-		tail = rx_tail;
-	} else {
-		buf = tx_buffer;
-		head = tx_head;
-		tail = tx_tail;
-	}
-
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
 	 */
-	if (head == tail - 1 || (tail == buf && head == buf + buffer_size - 1))
+	if (rx_head == rx_tail - 1 || (rx_tail == rx_buffer && rx_head == rx_buffer + buffer_size - 1))
 		return 0;	/* Buffer is full */
 
-	*head = val;
-	head = head < buf + buffer_size - 1 ? head + 1 : buf;
+	*rx_head = val;
+	rx_head = rx_head < rx_buffer + buffer_size - 1 ? rx_head + 1 : rx_buffer;
 
 	return 1;
 }
 
-uint8_t StreamSPI::retrieve(enum buffer_type type)
+int StreamSPI::storeRX(uint8_t val)
 {
-	volatile uint8_t *buf, *head, *tail;
+	/*
+	 * FIXME here we can loose bytes because buffer is full and we cannot
+	 * do anything to consume it. It is duty of the program to consume it
+	 */
+	if (tx_head == tx_tail - 1 || (tx_tail == tx_buffer && tx_head == tx_buffer + buffer_size - 1))
+		return 0;	/* Buffer is full */
+
+	*tx_head = val;
+	tx_head = tx_head < tx_buffer + buffer_size - 1 ? tx_head + 1 : tx_buffer;
+
+	return 1;
+}
+
+uint8_t StreamSPI::retrieveTX()
+{
 	uint8_t val;
 
-	if (type == RX_BUFFER) {
-		buf = rx_buffer;
-		head = rx_head;
-		tail = rx_tail;
-	} else {
-		buf = tx_buffer;
-		head = tx_head;
-		tail = tx_tail;
+	/*
+	 * When we retrieve a value from he transmission buffer it to
+	 * send it. So here we can clear the transmission request flag
+	 * because we are going to do it.
+	 */
+	tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
 
-		/*
-		 * When we retrieve a value from he transmission buffer it to
-		 * send it. So here we can clear the transmission request flag
-		 * because we are going to do it.
-		 */
-		tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
-	}
-
-	if (head == tail)
+	if (tx_head == tx_tail)
 		return 0;	/* There are no byte to send */
 
-	val = *tail;
-	tail = tail < buf + buffer_size - 1 ? tail + 1 : buf;
+	val = *tx_tail;
+	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
+
+	return 	val;
+}
+
+uint8_t StreamSPI::retrieveRX()
+{
+	uint8_t val;
+
+	if (rx_head == rx_tail)
+		return 0;	/* There are no byte to send */
+
+	val = *rx_tail;
+	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
 
 	return 	val;
 }
@@ -187,8 +192,8 @@ ISR (SPI_STC_vect)
 	}
 
 	/* Retrieve the next byte to send and store the incoming byte */
-	SPDR = StreamSPI0.retrieve(TX_BUFFER);
-	err = StreamSPI0.store(RX_BUFFER, SPDR);
+	SPDR = StreamSPI0.retrieveTX();
+	err = StreamSPI0.storeRX(SPDR);
 }
 #endif
 
@@ -206,7 +211,7 @@ int StreamSPI::peek(void)
 int StreamSPI::read(void)
 {
 	/* FIXME HardwareSerial return -1 when empty, not 0 (EOF) */
-	return retrieve(RX_BUFFER);
+	return retrieveRX();
 }
 
 void StreamSPI::flush(void)
@@ -224,7 +229,7 @@ size_t StreamSPI::write(uint8_t val)
 
 	do {
 		/* Try to store the value in the buffer */
-		n = store(TX_BUFFER, val);
+		n = storeTX(val);
 		if (n == 0)	/* TX buffer is full, transmit something */
 			waitRequestByteTransfer();
 	} while(n == 0);
