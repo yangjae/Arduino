@@ -74,6 +74,8 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	SPCR |= _BV(SPE);
 	SPCR &= ~_BV(MSTR);
 
+	SPDR = 0;
+
 	spi.setDataMode(spi_mode);
 	spi.attachInterrupt();
 	PORTB &= ~(0x1);	/* Enable pull-up on SS signal */
