@@ -26,6 +26,8 @@
 #include "Stream.h"
 
 #define SPI_DEFAULT_BUFFER_SIZE	64
+#define SPI_DEFAULT_IGNORE_TX 0x0
+#define SPI_DEFAULT_IGNORE_RX 0x0
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
 
@@ -56,6 +58,9 @@ class StreamSPI : public Stream
 	volatile unsigned int tx_flag;
 	virtual void raiseInterrupt();
 	virtual void waitRequestByteTransfer();
+
+	uint8_t tx_ignore;
+	uint8_t rx_ignore;
 
 	public:
 	StreamSPI(SPIClass spidev);

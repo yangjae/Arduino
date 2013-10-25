@@ -74,7 +74,10 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	SPCR |= _BV(SPE);
 	SPCR &= ~_BV(MSTR);
 
+	/* Initialize data before start interrupt */
 	SPDR = 0;
+	rx_ignore = SPI_DEFAULT_IGNORE_RX;
+	tx_ignore = SPI_DEFAULT_IGNORE_TX;
 
 	spi.setDataMode(spi_mode);
 	spi.attachInterrupt();
@@ -121,6 +124,9 @@ void StreamSPI::waitRequestByteTransfer()
 
 int StreamSPI::storeRX(uint8_t val)
 {
+	if (val == rx_ignore)
+		return 1;
+
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
@@ -147,6 +153,9 @@ int StreamSPI::storeRX(uint8_t val)
 
 int StreamSPI::storeTX(uint8_t val)
 {
+	if (val == tx_ignore)
+		return 1;
+
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
