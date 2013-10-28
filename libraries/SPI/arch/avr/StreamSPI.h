@@ -26,8 +26,11 @@
 #include "Stream.h"
 
 #define SPI_DEFAULT_BUFFER_SIZE	64
-#define SPI_DEFAULT_IGNORE_TX 0x0
-#define SPI_DEFAULT_IGNORE_RX 0x0
+#define SPI_DEFAULT_IGNORE_TX 0xFF
+#define SPI_DEFAULT_IGNORE_RX 0xFF
+#define SPI_IGNORE_CODE_LENGHT_RX 3
+#define SPI_IGNORE_CODE_LENGHT_TX 2
+
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
 
@@ -59,8 +62,33 @@ class StreamSPI : public Stream
 	virtual void raiseInterrupt();
 	virtual void waitRequestByteTransfer();
 
+	/*
+	 * In order to allow the transmission of the clock without data, it si
+	 * necessary an invalid byte to ignore. In the serial stream is used
+	 * for binary data transmission all values are valid, so it is
+	 * necessary a multi-byte code.
+	 *
+	 * If the value to ignore is repeated three consecutive time, it means
+	 * that the value is valid.
+	 * If the value to ignore occur just one time, followed by two 0x0 bytes
+	 * it means that the byte is to ignore.
+	 *
+	 * The main processor will send at least 3 bytes when it is sending the
+	 * invalid character.
+	 *
+	 * On this side on the bus, the processor use 2 bytes to send the
+	 * invalid character. The first byte is the invalid character,
+	 * followed by 0x0 if the byte is to ignore.
+	 */
 	uint8_t tx_ignore;
 	uint8_t rx_ignore;
+
+	uint8_t tx_last_ignore;
+	uint8_t rx_buf_ignore[SPI_IGNORE_CODE_LENGHT_RX];
+
+	unsigned int tx_ignore_index;
+	unsigned int rx_ignore_index;
+
 
 	public:
 	StreamSPI(SPIClass spidev);

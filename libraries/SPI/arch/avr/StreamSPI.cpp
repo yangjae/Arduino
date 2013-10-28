@@ -124,8 +124,30 @@ void StreamSPI::waitRequestByteTransfer()
 
 int StreamSPI::storeRX(uint8_t val)
 {
-	if (val == rx_ignore)
-		return 1;
+	int i, ignore = 0;
+
+	if (val == rx_ignore || rx_buf_ignore[0] == rx_ignore) {
+		rx_buf_ignore[rx_ignore_index] = val;
+		rx_ignore_index++;
+		if (rx_ignore_index < SPI_IGNORE_CODE_LENGHT_RX)
+			return 1;
+
+		/* Code acquisition is over, verify it */
+		for (i = 0; i < SPI_IGNORE_CODE_LENGHT_RX; ++i) {
+			if (rx_buf_ignore[i] == rx_ignore)
+				continue;
+
+			/* The code tell us to ignore the byte */
+			memset(rx_buf_ignore, 0, SPI_IGNORE_CODE_LENGHT_RX);
+			return 1;
+		}
+
+		/*
+		 * At this point, if the code is telling us that the byte is
+		 * valid, we can proceed as usual because val contains the
+		 * valid value
+		 */
+	}
 
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
@@ -153,8 +175,7 @@ int StreamSPI::storeRX(uint8_t val)
 
 int StreamSPI::storeTX(uint8_t val)
 {
-	if (val == tx_ignore)
-		return 1;
+	int n;
 
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
@@ -177,6 +198,19 @@ int StreamSPI::storeTX(uint8_t val)
 	Serial.println((unsigned long)tx_tail, HEX);
 	Serial.println("tx s - - - - - - ");
 	#endif
+
+	/*
+	 * When storing the invalid value in the transmission buffer, this
+	 * function must repeat the value in order to build the code to
+	 * validate the byte.
+	 */
+	if (val == tx_ignore && tx_ignore_index < SPI_IGNORE_CODE_LENGHT_TX) {
+		tx_ignore_index++;
+		write(tx_ignore);
+	} else {
+		tx_ignore_index = 0;
+	}
+
 	return 1;
 }
 
@@ -191,8 +225,19 @@ uint8_t StreamSPI::retrieveTX()
 	 */
 	tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
 
-	if (tx_head == tx_tail)
-		return 0;	/* There are no byte to send */
+	if (tx_head == tx_tail || tx_last_ignore == tx_ignore) {
+		/*
+		 * There are no byte to send, so send invalid bytes.
+		 * Invalid transmission byte is 2 byte length so we can just
+		 * toggle the value on each transfer.
+		 *
+		 * If the buffer become not empty, but it was sent only half
+		 * of the code, we MUST send the other part of it. (this is
+		 * the reason of the || in the if)
+		 */
+		tx_last_ignore = (tx_last_ignore == tx_ignore ? 0x0 : tx_ignore);
+		return tx_last_ignore;
+	}
 
 	#if DEBUG
 	Serial.println((unsigned long)tx_head, HEX);
