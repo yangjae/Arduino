@@ -216,7 +216,7 @@ int StreamSPI::storeTX(uint8_t val)
 	 * function must repeat the value in order to build the code to
 	 * validate the byte.
 	 */
-	if (val == tx_ignore && tx_ignore_index < SPI_IGNORE_CODE_LENGHT_TX) {
+	if (val == tx_ignore && tx_ignore_index < SPI_IGNORE_CODE_LENGHT_TX - 1) {
 		tx_ignore_index++;
 		write(tx_ignore);
 	} else {
