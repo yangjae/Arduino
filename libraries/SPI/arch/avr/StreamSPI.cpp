@@ -128,11 +128,21 @@ int StreamSPI::storeRX(uint8_t val)
 	int i, ignore = 0;
 
 	if (val == rx_ignore || rx_buf_ignore[0] == rx_ignore) {
+		#if DEBUG
+		Serial.print("RX store invalid: ");
+		Serial.print(rx_ignore_index, DEC);
+		Serial.print(" | value: ");
+		Serial.print(val, HEX);
+		Serial.println(" ===");
+		#endif
 		rx_buf_ignore[rx_ignore_index] = val;
 		rx_ignore_index++;
 		if (rx_ignore_index < SPI_IGNORE_CODE_LENGHT_RX)
 			return 1;
 
+		#if DEBUG
+		Serial.println("Check invalid code ===");
+		#endif
 		/* Code acquisition is over, verify it */
 		for (i = 0; i < SPI_IGNORE_CODE_LENGHT_RX; ++i) {
 			if (rx_buf_ignore[i] != rx_ignore)
@@ -151,6 +161,9 @@ int StreamSPI::storeRX(uint8_t val)
 		 * valid, we can proceed as usual because val contains the
 		 * valid value
 		 */
+		#if DEBUG
+		Serial.println("Storing filtered invalid code ===");
+		#endif
 	}
 
 	/*
