@@ -140,6 +140,8 @@ int StreamSPI::storeRX(uint8_t val)
 		if (rx_ignore_index < SPI_IGNORE_CODE_LENGHT_RX)
 			return 1;
 
+		rx_ignore_index = 0;
+
 		#if DEBUG
 		Serial.println("Check invalid code ===");
 		#endif
