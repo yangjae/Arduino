@@ -285,7 +285,7 @@ uint8_t StreamSPI::retrieveRX()
 	uint8_t val;
 
 	if (rx_head == rx_tail)
-		return 0;	/* There are no byte to send */
+		return 0;	/* There are no byte to read */
 
 	#if DEBUG
 	Serial.print("RX retrieve  Head pre: ");
