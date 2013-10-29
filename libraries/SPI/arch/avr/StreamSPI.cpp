@@ -157,18 +157,22 @@ int StreamSPI::storeRX(uint8_t val)
 		return 0;	/* Buffer is full */
 
 	#if DEBUG
-	Serial.println((unsigned long)rx_head, HEX);
-	Serial.println((unsigned long)rx_tail, HEX);
-	Serial.println("rx s - - - ");
+	Serial.print("RX store  Head pre: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX store  Tail pre: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	*rx_head = val;
 	rx_head = rx_head < rx_buffer + buffer_size - 1 ? rx_head + 1 : rx_buffer;
 
 	#if DEBUG
-	Serial.println((unsigned long)rx_head, HEX);
-	Serial.println((unsigned long)rx_tail, HEX);
-	Serial.println("rx s - - - - - - ");
+	Serial.print("RX store  Head post: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX store  Tail post: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 	return 1;
 }
@@ -185,18 +189,22 @@ int StreamSPI::storeTX(uint8_t val)
 		return 0;	/* Buffer is full */
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("tx s - - - ");
+	Serial.print("TX store  Head pre: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX store  Tail pre: ");
+	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	*tx_head = val;
 	tx_head = tx_head < tx_buffer + buffer_size - 1 ? tx_head + 1 : tx_buffer;
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("tx s - - - - - - ");
+	Serial.print("TX store  Head post: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX store  Tail post: ");
+	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	/*
@@ -236,22 +244,33 @@ uint8_t StreamSPI::retrieveTX()
 		 * the reason of the || in the if)
 		 */
 		tx_last_ignore = (tx_last_ignore == tx_ignore ? 0x0 : tx_ignore);
+
+		#if DEBUG
+		Serial.print("TX ignore retrieve: ");
+		Serial.print((unsigned long)tx_last_ignore, HEX);
+		Serial.println(" ===");
+		#endif
+
 		return tx_last_ignore;
 	}
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("tx r - - - ");
+	Serial.print("TX retrieve  Head pre: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX retrieve  Tail pre: ");
+	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	val = *tx_tail;
 	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("tx r - - - - - - ");
+	Serial.print("TX retrieve  Head post: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX retrieve  Tail post: ");
+	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	return 	val;
@@ -265,18 +284,22 @@ uint8_t StreamSPI::retrieveRX()
 		return 0;	/* There are no byte to send */
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("rx r- - - ");
+	Serial.print("RX retrieve  Head pre: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX retrieve  Tail pre: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	val = *rx_tail;
 	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
 
 	#if DEBUG
-	Serial.println((unsigned long)tx_head, HEX);
-	Serial.println((unsigned long)tx_tail, HEX);
-	Serial.println("rx r- - - - - - ");
+	Serial.print("RX retrieve  Head post: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX retrieve  Tail post: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.println(" ===");
 	#endif
 
 	return 	val;
