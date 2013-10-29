@@ -135,13 +135,16 @@ int StreamSPI::storeRX(uint8_t val)
 
 		/* Code acquisition is over, verify it */
 		for (i = 0; i < SPI_IGNORE_CODE_LENGHT_RX; ++i) {
-			if (rx_buf_ignore[i] == rx_ignore)
-				continue;
-
-			/* The code tell us to ignore the byte */
-			memset(rx_buf_ignore, 0, SPI_IGNORE_CODE_LENGHT_RX);
-			return 1;
+			if (rx_buf_ignore[i] != rx_ignore)
+				break;
 		}
+
+		/* Clear code buffer */
+		memset(rx_buf_ignore, 0, SPI_IGNORE_CODE_LENGHT_RX);
+
+		/* The code tell us to ignore the byte */
+		if (i == SPI_IGNORE_CODE_LENGHT_RX)
+			return 1;
 
 		/*
 		 * At this point, if the code is telling us that the byte is
