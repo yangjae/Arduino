@@ -75,9 +75,10 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	SPCR &= ~_BV(MSTR);
 
 	/* Initialize data before start interrupt */
-	SPDR = 0;
 	rx_ignore = SPI_DEFAULT_IGNORE_RX;
 	tx_ignore = SPI_DEFAULT_IGNORE_TX;
+	SPDR = tx_ignore;
+	tx_last_ignore = tx_ignore;
 
 	spi.setDataMode(spi_mode);
 	spi.attachInterrupt();
