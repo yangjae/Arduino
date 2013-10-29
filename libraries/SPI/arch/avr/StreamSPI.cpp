@@ -143,7 +143,7 @@ int StreamSPI::storeRX(uint8_t val)
 		memset(rx_buf_ignore, 0, SPI_IGNORE_CODE_LENGHT_RX);
 
 		/* The code tell us to ignore the byte */
-		if (i == SPI_IGNORE_CODE_LENGHT_RX)
+		if (i != SPI_IGNORE_CODE_LENGHT_RX)
 			return 1;
 
 		/*
