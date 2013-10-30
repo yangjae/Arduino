@@ -107,6 +107,9 @@ void StreamSPI::end()
 
 void StreamSPI::raiseInterrupt()
 {
+	#if DEBUG
+	Serial.println("Do interrupt ===");
+	#endif
 	tx_flag |= SPI_TX_FLAG_REQ_TRANS;
 	PORTE |= 0x40;
 	PORTE &= ~0x40;
@@ -180,6 +183,8 @@ int StreamSPI::storeRX(uint8_t val)
 	Serial.print((unsigned long)rx_head, HEX);
 	Serial.print(" | RX store  Tail pre: ");
 	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(val, HEX);
 	Serial.println(" ===");
 	#endif
 
@@ -212,6 +217,8 @@ int StreamSPI::storeTX(uint8_t val)
 	Serial.print((unsigned long)tx_head, HEX);
 	Serial.print(" | TX store  Tail pre: ");
 	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(val, HEX);
 	Serial.println(" ===");
 	#endif
 
@@ -278,6 +285,8 @@ uint8_t StreamSPI::retrieveTX()
 	Serial.print((unsigned long)tx_head, HEX);
 	Serial.print(" | TX retrieve  Tail pre: ");
 	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(*tx_tail, HEX);
 	Serial.println(" ===");
 	#endif
 
@@ -307,6 +316,8 @@ uint8_t StreamSPI::retrieveRX()
 	Serial.print((unsigned long)rx_head, HEX);
 	Serial.print(" | RX retrieve  Tail pre: ");
 	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(*rx_tail, HEX);
 	Serial.println(" ===");
 	#endif
 
@@ -367,8 +378,16 @@ void StreamSPI::flush(void)
 	unsigned int tmp;
 
 	/* Continue transmission until buffer is empty */
-	while (tx_head != tx_tail)
+	while (tx_head != tx_tail) {
+		#if DEBUG
+		Serial.print("TX flush  Head: ");
+		Serial.print((unsigned long)tx_head, HEX);
+		Serial.print(" | Tail: ");
+		Serial.print((unsigned long)tx_tail, HEX);
+		Serial.println(" ===");
+		#endif
 		waitRequestByteTransfer();
+	}
 }
 /* * * Print methods implementations * * */
 size_t StreamSPI::write(uint8_t val)
