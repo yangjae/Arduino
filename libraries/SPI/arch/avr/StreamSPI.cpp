@@ -280,6 +280,16 @@ uint8_t StreamSPI::retrieveTX()
 	 */
 	tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
 
+	#if DEBUG
+	Serial.print("TX retrieve  Head pre: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX retrieve  Tail pre: ");
+	Serial.print((unsigned long)tx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(*tx_tail, HEX);
+	Serial.println(" ===");
+	#endif
+
 	if (tx_head == tx_tail || tx_last_ignore == tx_ignore) {
 		/*
 		 * There are no byte to send, so send invalid bytes.
@@ -301,15 +311,6 @@ uint8_t StreamSPI::retrieveTX()
 		return tx_last_ignore;
 	}
 
-	#if DEBUG
-	Serial.print("TX retrieve  Head pre: ");
-	Serial.print((unsigned long)tx_head, HEX);
-	Serial.print(" | TX retrieve  Tail pre: ");
-	Serial.print((unsigned long)tx_tail, HEX);
-	Serial.print(" | val: ");
-	Serial.print(*tx_tail, HEX);
-	Serial.println(" ===");
-	#endif
 
 	val = *tx_tail;
 	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
