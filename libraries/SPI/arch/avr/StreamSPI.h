@@ -31,6 +31,8 @@
 #define SPI_IGNORE_CODE_LENGHT_RX 3
 #define SPI_IGNORE_CODE_LENGHT_TX 2
 
+#define SPI_DEFAULT_MAXIMUM_WAIT_CLOCK 10	/* milli-seconds */
+
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
 
@@ -89,6 +91,7 @@ class StreamSPI : public Stream
 	unsigned int tx_ignore_index;
 	unsigned int rx_ignore_index;
 
+	unsigned int maximum_wait_clock;
 
 	public:
 	StreamSPI(SPIClass spidev);

@@ -95,6 +95,8 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 
 	tx_flag = 0;
 
+	maximum_wait_clock = SPI_DEFAULT_MAXIMUM_WAIT_CLOCK;
+
 	return 0;
 }
 
@@ -117,12 +119,31 @@ void StreamSPI::raiseInterrupt()
 
 void StreamSPI::waitRequestByteTransfer()
 {
+	int max_try = maximum_wait_clock + 1;
+
 	/* Raise an interrupt to request transmission */
 	raiseInterrupt();
 
 	/* Wait until transmission occur */
-	while (tx_flag & SPI_TX_FLAG_REQ_TRANS)
-		;
+	while ((--max_try) && (tx_flag & SPI_TX_FLAG_REQ_TRANS))
+		delay(1);
+
+	/*
+	 * If we waited too much to obtain the clock, probably the SPI TTY
+	 * driver is not loaded on the other side. So, consume the byte and
+	 * continue.
+	 */
+	if (!max_try) {
+		#if DEBUG
+		Serial.println("No interrupt occur ===");
+		#endif
+		retrieveTX();
+	} else {
+		#if DEBUG
+		Serial.print(max_try, DEC);
+		Serial.println(" Interrupt done ===");
+		#endif
+	}
 }
 
 
