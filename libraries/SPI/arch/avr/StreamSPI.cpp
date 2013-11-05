@@ -191,7 +191,7 @@ int StreamSPI::storeRX(uint8_t val)
 	*rx_head = val;
 	rx_head = rx_head < rx_buffer + buffer_size - 1 ? rx_head + 1 : rx_buffer;
 
-	#if DEBUG
+	#if VDEBUG
 	Serial.print("RX store  Head post: ");
 	Serial.print((unsigned long)rx_head, HEX);
 	Serial.print(" | RX store  Tail post: ");
@@ -225,7 +225,7 @@ int StreamSPI::storeTX(uint8_t val)
 	*tx_head = val;
 	tx_head = tx_head < tx_buffer + buffer_size - 1 ? tx_head + 1 : tx_buffer;
 
-	#if DEBUG
+	#if VDEBUG
 	Serial.print("TX store  Head post: ");
 	Serial.print((unsigned long)tx_head, HEX);
 	Serial.print(" | TX store  Tail post: ");
@@ -293,7 +293,7 @@ uint8_t StreamSPI::retrieveTX()
 	val = *tx_tail;
 	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
 
-	#if DEBUG
+	#if VDEBUG
 	Serial.print("TX retrieve  Head post: ");
 	Serial.print((unsigned long)tx_head, HEX);
 	Serial.print(" | TX retrieve  Tail post: ");
@@ -324,7 +324,7 @@ uint8_t StreamSPI::retrieveRX()
 	val = *rx_tail;
 	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
 
-	#if DEBUG
+	#if VDEBUG
 	Serial.print("RX retrieve  Head post: ");
 	Serial.print((unsigned long)rx_head, HEX);
 	Serial.print(" | RX retrieve  Tail post: ");
