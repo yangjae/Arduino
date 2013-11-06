@@ -31,7 +31,7 @@
 #define SPI_IGNORE_CODE_LENGHT_RX 3
 #define SPI_IGNORE_CODE_LENGHT_TX 2
 
-#define SPI_DEFAULT_MAXIMUM_WAIT_CLOCK 10	/* milli-seconds */
+#define SPI_DEFAULT_MAXIMUM_WAIT_CLOCK 50	/* milli-seconds */
 
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
