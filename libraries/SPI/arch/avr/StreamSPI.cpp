@@ -19,7 +19,8 @@
  */
 
 #include "StreamSPI.h"
-#define DEBUG 1
+//#define DEBUG 1
+//#define VDEBUG 1
 
 /* Preinstantiate objects */
 StreamSPI StreamSPI0(SPI);
