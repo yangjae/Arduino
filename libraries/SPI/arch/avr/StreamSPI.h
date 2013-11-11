@@ -36,7 +36,7 @@
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
 #define SPI_FLAG_WAIT_LENGTH (1 << 0)
-#define SPI_FLAG_WAIT_INTERRUPT (1 << 1)
+#define SPI_FLAG_WAIT_TRANSFER (1 << 1)
 
 #define SPI_OP_STORE_RX		(1 << 0)
 #define SPI_OP_RETRIEVE_TX	(1 << 1)

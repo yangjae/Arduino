@@ -19,7 +19,7 @@
  */
 
 #include "StreamSPI.h"
-#define DEBUG 1
+//#define DEBUG 1
 //#define VDEBUG 1
 
 /* Preinstantiate objects */
@@ -128,14 +128,14 @@ void StreamSPI::raiseInterrupt()
 	 * Do not raise another interrupt if the driver is already waiting
 	 * for it
 	 */
-	if (flags & SPI_FLAG_WAIT_INTERRUPT) {
+	if (flags & SPI_FLAG_WAIT_TRANSFER) {
 	#if DEBUG
 	Serial.println("Pending interrupt ===");
 	#endif
 		return;
 	}
 
-	flags |= SPI_FLAG_WAIT_INTERRUPT;
+	flags |= SPI_FLAG_WAIT_TRANSFER;
 	PORTE |= 0x40;
 	PORTE &= ~0x40;
 }
@@ -148,7 +148,7 @@ void StreamSPI::waitRequestByteTransfer()
 	raiseInterrupt();
 
 	/* Wait until transmission occur */
-	while ((--max_try) && (flags & SPI_FLAG_WAIT_INTERRUPT))
+	while ((--max_try) && (flags & SPI_FLAG_WAIT_TRANSFER))
 		delay(1);
 
 	/*
@@ -402,11 +402,10 @@ unsigned long StreamSPI::checkInterrupt(uint8_t val)
 		 * send. This work both for the first request, and to
 		 * build a valid frame length + payload
 		 */
-		if (val == 0) {
+		if (val == 0)
 			op |= SPI_OP_LENGTH_TX;
-			flags &= ~SPI_FLAG_WAIT_INTERRUPT;
-		}
 	} else {
+		flags &= ~SPI_FLAG_WAIT_TRANSFER;
 		op |= SPI_OP_STORE_RX;
 		rx_byte_left--;
 	}
@@ -443,6 +442,12 @@ ISR (SPI_STC_vect)
 	}
 	val = SPDR;
 	op = StreamSPI0.checkInterrupt(val);
+
+	#if DEBUG
+	Serial.print("Operations: 0x");
+	Serial.print((unsigned long)op, HEX);
+	Serial.println(" ===");
+	#endif
 
 	/* Retrieve the next byte to send and store the incoming byte */
 	if (op & SPI_OP_STORE_RX)
