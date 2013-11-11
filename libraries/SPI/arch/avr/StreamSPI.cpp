@@ -19,7 +19,7 @@
  */
 
 #include "StreamSPI.h"
-//#define DEBUG 1
+#define DEBUG 1
 //#define VDEBUG 1
 
 /* Preinstantiate objects */
@@ -78,8 +78,8 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	/* Initialize data before start interrupt */
 	rx_ignore = SPI_DEFAULT_IGNORE_RX;
 	tx_ignore = SPI_DEFAULT_IGNORE_TX;
-	SPDR = tx_ignore;
-	tx_last_ignore = tx_ignore;
+	SPDR = 0;	/* first byte is length, then ignore it */
+	tx_last_ignore = 0;
 
 	spi.setDataMode(spi_mode);
 	spi.attachInterrupt();
@@ -98,6 +98,16 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 
 	maximum_wait_clock = SPI_DEFAULT_MAXIMUM_WAIT_CLOCK;
 
+	/* Nuovo */
+	flags |= SPI_FLAG_WAIT_LENGTH;
+
+	rx_length = 0;
+	rx_byte_left = 0;
+
+	tx_length = 0;
+	tx_byte_left = 0;
+
+
 	return 0;
 }
 
@@ -113,7 +123,19 @@ void StreamSPI::raiseInterrupt()
 	#if DEBUG
 	Serial.println("Do interrupt ===");
 	#endif
-	tx_flag |= SPI_TX_FLAG_REQ_TRANS;
+
+	/*
+	 * Do not raise another interrupt if the driver is already waiting
+	 * for it
+	 */
+	if (flags & SPI_FLAG_WAIT_INTERRUPT) {
+	#if DEBUG
+	Serial.println("Pending interrupt ===");
+	#endif
+		return;
+	}
+
+	flags |= SPI_FLAG_WAIT_INTERRUPT;
 	PORTE |= 0x40;
 	PORTE &= ~0x40;
 }
@@ -126,7 +148,7 @@ void StreamSPI::waitRequestByteTransfer()
 	raiseInterrupt();
 
 	/* Wait until transmission occur */
-	while ((--max_try) && (tx_flag & SPI_TX_FLAG_REQ_TRANS))
+	while ((--max_try) && (flags & SPI_FLAG_WAIT_INTERRUPT))
 		delay(1);
 
 	/*
@@ -148,50 +170,17 @@ void StreamSPI::waitRequestByteTransfer()
 }
 
 
+/*
+ * Write on the receive buffer. Here we have to control the incoming frames.
+ * It works like a state machine.
+ *
+ * 1. wait for the byte that tell us the length of the frame
+ * 2. store byte until the end of frame
+ * 3. start again from step (1)
+ */
 int StreamSPI::storeRX(uint8_t val)
 {
-	int i, ignore = 0;
 
-	if (val == rx_ignore || rx_buf_ignore[0] == rx_ignore) {
-		#if DEBUG
-		Serial.print("RX store invalid: ");
-		Serial.print(rx_ignore_index, DEC);
-		Serial.print(" | value: ");
-		Serial.print(val, HEX);
-		Serial.println(" ===");
-		#endif
-		rx_buf_ignore[rx_ignore_index] = val;
-		rx_ignore_index++;
-		if (rx_ignore_index < SPI_IGNORE_CODE_LENGHT_RX)
-			return 1;
-
-		rx_ignore_index = 0;
-
-		#if DEBUG
-		Serial.println("Check invalid code ===");
-		#endif
-		/* Code acquisition is over, verify it */
-		for (i = 0; i < SPI_IGNORE_CODE_LENGHT_RX; ++i) {
-			if (rx_buf_ignore[i] != rx_ignore)
-				break;
-		}
-
-		/* Clear code buffer */
-		memset(rx_buf_ignore, 0, SPI_IGNORE_CODE_LENGHT_RX);
-
-		/* The code tell us to ignore the byte */
-		if (i != SPI_IGNORE_CODE_LENGHT_RX)
-			return 1;
-
-		/*
-		 * At this point, if the code is telling us that the byte is
-		 * valid, we can proceed as usual because val contains the
-		 * valid value
-		 */
-		#if DEBUG
-		Serial.println("Storing filtered invalid code ===");
-		#endif
-	}
 
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
@@ -214,15 +203,22 @@ int StreamSPI::storeRX(uint8_t val)
 	rx_head = rx_head < rx_buffer + buffer_size - 1 ? rx_head + 1 : rx_buffer;
 
 	#if VDEBUG
-	Serial.print("RX store  Head post: ");
-	Serial.print((unsigned long)rx_head, HEX);
-	Serial.print(" | RX store  Tail post: ");
-	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.print("TX store  Head post: ");
+	Serial.print((unsigned long)tx_head, HEX);
+	Serial.print(" | TX store  Tail post: ");
+	Serial.print((unsigned long)tx_tail, HEX);
 	Serial.println(" ===");
 	#endif
+
 	return 1;
 }
 
+
+/*
+ * Write on the transmission buffer. This function write the incoming byte
+ * into the TX buffer (if it is not full). If the byte to write is the
+ * 'ignore' byte, then it replace it with its escape code.
+ */
 int StreamSPI::storeTX(uint8_t val)
 {
 	int n;
@@ -246,6 +242,7 @@ int StreamSPI::storeTX(uint8_t val)
 
 	*tx_head = val;
 	tx_head = tx_head < tx_buffer + buffer_size - 1 ? tx_head + 1 : tx_buffer;
+	tx_length++;
 
 	#if VDEBUG
 	Serial.print("TX store  Head post: ");
@@ -268,6 +265,45 @@ int StreamSPI::storeTX(uint8_t val)
 	}
 
 	return 1;
+}
+
+
+/*
+ * Read from the receive buffer. There is no special control to do, if a byte
+ * is stored in the RX buffer, then is ready to be pushed to the application.
+ *
+ * This function just get a byte from the buffer and update the buffer's
+ * index.
+ */
+uint8_t StreamSPI::retrieveRX()
+{
+	uint8_t val;
+
+	if (rx_head == rx_tail)
+		return 0;	/* There are no byte to read */
+
+	#if DEBUG
+	Serial.print("RX retrieve  Head pre: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX retrieve  Tail pre: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.print(" | val: ");
+	Serial.print(*rx_tail, HEX);
+	Serial.println(" ===");
+	#endif
+
+	val = *rx_tail;
+	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
+
+	#if VDEBUG
+	Serial.print("RX retrieve  Head post: ");
+	Serial.print((unsigned long)rx_head, HEX);
+	Serial.print(" | RX retrieve  Tail post: ");
+	Serial.print((unsigned long)rx_tail, HEX);
+	Serial.println(" ===");
+	#endif
+
+	return 	val;
 }
 
 uint8_t StreamSPI::retrieveTX()
@@ -312,9 +348,9 @@ uint8_t StreamSPI::retrieveTX()
 		return tx_last_ignore;
 	}
 
-
 	val = *tx_tail;
 	tx_tail = tx_tail < tx_buffer + buffer_size - 1 ? tx_tail + 1 : tx_buffer;
+	tx_length--;
 
 	#if VDEBUG
 	Serial.print("TX retrieve  Head post: ");
@@ -327,35 +363,66 @@ uint8_t StreamSPI::retrieveTX()
 	return 	val;
 }
 
-uint8_t StreamSPI::retrieveRX()
+uint8_t StreamSPI::getLengthTX()
 {
-	uint8_t val;
+	return tx_length;
+}
 
-	if (rx_head == rx_tail)
-		return 0;	/* There are no byte to read */
+/*
+ * It check the incoming byte and it compares the value with the current
+ * state of the driver to decide the next step.
+ *
+ *  < 0 : Error
+ *  0 : Store the value
+ *  1 : Skip value
+ *
+ */
+unsigned long StreamSPI::checkInterrupt(uint8_t val)
+{
+	unsigned long op = 0;
 
-	#if DEBUG
-	Serial.print("RX retrieve  Head pre: ");
-	Serial.print((unsigned long)rx_head, HEX);
-	Serial.print(" | RX retrieve  Tail pre: ");
-	Serial.print((unsigned long)rx_tail, HEX);
-	Serial.print(" | val: ");
-	Serial.print(*rx_tail, HEX);
-	Serial.println(" ===");
-	#endif
+	op |= SPI_OP_RETRIEVE_TX;
+	/*
+	 * If the driver is waiting for the length byte, then save it
+	 * and continue.
+	 *
+	 * Else, decrease the number of byte left in the current frame
+	 * and put the byte into the RX buffer
+	 */
+	if (rx_byte_left == 0) {
+		op &= ~SPI_OP_STORE_RX;
 
-	val = *rx_tail;
-	rx_tail = rx_tail < rx_buffer + buffer_size - 1 ? rx_tail + 1 : rx_buffer;
+		rx_length = val;
+		rx_byte_left = rx_length;
+		tx_last_ignore = 0;
 
-	#if VDEBUG
-	Serial.print("RX retrieve  Head post: ");
-	Serial.print((unsigned long)rx_head, HEX);
-	Serial.print(" | RX retrieve  Tail post: ");
-	Serial.print((unsigned long)rx_tail, HEX);
-	Serial.println(" ===");
-	#endif
+		/*
+		 * If the main processor send a byte with length '0' it
+		 * means that it wants to know how many byte we need to
+		 * send. This work both for the first request, and to
+		 * build a valid frame length + payload
+		 */
+		if (val == 0) {
+			op |= SPI_OP_LENGTH_TX;
+			flags &= ~SPI_FLAG_WAIT_INTERRUPT;
+		}
+	} else {
+		op |= SPI_OP_STORE_RX;
+		rx_byte_left--;
+	}
 
-	return 	val;
+
+	if (rx_byte_left == 0) {
+		/*
+		 * When the driver reach 0, it means that a frame is over,
+		 * so do not retrieve the next byte because it is the length
+		 * of the next frame.
+		 */
+		op &= ~SPI_OP_RETRIEVE_TX;
+	}
+
+out:
+	return op;
 }
 
 /*
@@ -366,16 +433,30 @@ uint8_t StreamSPI::retrieveRX()
 #ifdef SPI_STC_vect
 ISR (SPI_STC_vect)
 {
+	unsigned long op;
+	uint8_t val;
 	int err;
 
 	/* Do not handle interrupt on SPI collision */
 	if (SPSR & 0x40) {
 		return;
 	}
+	val = SPDR;
+	op = StreamSPI0.checkInterrupt(val);
 
 	/* Retrieve the next byte to send and store the incoming byte */
-	SPDR = StreamSPI0.retrieveTX();
-	err = StreamSPI0.storeRX(SPDR);
+	if (op & SPI_OP_STORE_RX)
+		err = StreamSPI0.storeRX(val);
+
+	if (op & SPI_OP_RETRIEVE_TX)
+		val = StreamSPI0.retrieveTX();
+	else
+		val = 0;
+
+	if (op & SPI_OP_LENGTH_TX)
+		val = StreamSPI0.getLengthTX();
+
+	SPDR = val;
 }
 #endif
 
@@ -420,8 +501,16 @@ size_t StreamSPI::write(uint8_t val)
 	do {
 		/* Try to store the value in the buffer */
 		n = storeTX(val);
-		if (n == 0)	/* TX buffer is full, transmit something */
+
+		/*
+		 * TX buffer is full, transmit something
+		 * FIXME I prefer to just return 0
+		 */
+		if (n == 0) {
 			waitRequestByteTransfer();
+		} else if (getLengthTX() > buffer_size / 2) {
+			raiseInterrupt();
+		}
 	} while(n == 0);
 
 	return 1;

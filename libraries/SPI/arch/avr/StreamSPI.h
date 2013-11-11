@@ -35,6 +35,12 @@
 
 
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
+#define SPI_FLAG_WAIT_LENGTH (1 << 0)
+#define SPI_FLAG_WAIT_INTERRUPT (1 << 1)
+
+#define SPI_OP_STORE_RX		(1 << 0)
+#define SPI_OP_RETRIEVE_TX	(1 << 1)
+#define SPI_OP_LENGTH_TX	(1 << 2)
 
 enum buffer_type {
 	TX_BUFFER,
@@ -45,6 +51,14 @@ class StreamSPI : public Stream
 {
 	protected:
 	SPIClass spi;
+	unsigned long flags;
+
+	uint8_t rx_length;
+	uint8_t rx_byte_left;
+
+	uint8_t tx_length;
+	uint8_t tx_byte_left;
+
 	uint8_t *rx_buffer;	/* Allocated on begin(), freed on end() */
 	uint8_t *tx_buffer;	/* Allocated on begin(), freed on end() */
 	unsigned int buffer_size;
@@ -103,6 +117,9 @@ class StreamSPI : public Stream
 	uint8_t retrieveTX();
 	int storeRX(uint8_t val);
 	uint8_t retrieveRX();
+
+	virtual unsigned long checkInterrupt(uint8_t val);
+	virtual uint8_t getLengthTX();
 
 	/* From Stream.h */
 	virtual int available(void);
