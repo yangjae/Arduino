@@ -1,6 +1,8 @@
 /*
  * StreamSPI.h - Hardware SPI stream
- * Copyright (c) 2013 DogHunter
+ *
+ * Copyright (c) dog hunter AG - Zug - CH
+ * General Public License version 2 (GPLv2)
  * Author Federico Vaga <federicov@linino.org>
  *
  * This library is free software; you can redistribute it and/or
