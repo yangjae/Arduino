@@ -475,7 +475,10 @@ int StreamSPI::available(void)
 
 int StreamSPI::peek(void)
 {
-	return *tx_tail;
+	if (rx_head == rx_tail)
+		return -1; /* No byte available*/
+	else
+		return *rx_tail;
 }
 
 int StreamSPI::read(void)
