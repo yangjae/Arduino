@@ -30,7 +30,7 @@
 #define SPI_DEFAULT_BUFFER_SIZE	64
 #define SPI_DEFAULT_IGNORE_TX 0xFF
 #define SPI_DEFAULT_IGNORE_RX 0xFF
-#define SPI_IGNORE_CODE_LENGHT_RX 3
+#define SPI_IGNORE_CODE_LENGHT_RX 2
 #define SPI_IGNORE_CODE_LENGHT_TX 2
 
 #define SPI_DEFAULT_MAXIMUM_WAIT_CLOCK 50	/* milli-seconds */
@@ -39,6 +39,7 @@
 #define SPI_TX_FLAG_REQ_TRANS	(1 << 0)
 #define SPI_FLAG_WAIT_LENGTH (1 << 0)
 #define SPI_FLAG_WAIT_TRANSFER (1 << 1)
+#define SPI_FLAG_IGNORE_RX (1 << 2)
 
 #define SPI_OP_STORE_RX		(1 << 0)
 #define SPI_OP_RETRIEVE_TX	(1 << 1)
@@ -47,6 +48,14 @@
 enum buffer_type {
 	TX_BUFFER,
 	RX_BUFFER,
+};
+
+enum stm_status {
+	STM_WAIT_LENGTH,
+	STM_CHECK_BYTE1,
+	STM_CHECK_BYTE2,
+	STM_STORE_BYTES,
+	STM_IGNORE_BYTES,
 };
 
 class StreamSPI : public Stream
@@ -79,6 +88,8 @@ class StreamSPI : public Stream
 	volatile unsigned int tx_flag;
 	virtual void raiseInterrupt();
 	virtual void waitRequestByteTransfer();
+
+	enum stm_status status;
 
 	/*
 	 * In order to allow the transmission of the clock without data, it si

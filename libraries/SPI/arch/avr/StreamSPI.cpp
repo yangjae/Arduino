@@ -21,7 +21,7 @@
  */
 
 #include "StreamSPI.h"
-///att#define DEBUG 1
+//#define DEBUG 1
 //#define VDEBUG 1
 
 /* Preinstantiate objects */
@@ -109,6 +109,7 @@ int StreamSPI::begin(unsigned int buf_size, unsigned int spi_mode)
 	tx_length = 0;
 	tx_byte_left = 0;
 
+	status = STM_WAIT_LENGTH;
 
 	return 0;
 }
@@ -182,8 +183,6 @@ void StreamSPI::waitRequestByteTransfer()
  */
 int StreamSPI::storeRX(uint8_t val)
 {
-
-
 	/*
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
@@ -384,34 +383,77 @@ unsigned long StreamSPI::checkInterrupt(uint8_t val)
 	unsigned long op = 0;
 
 	op |= SPI_OP_RETRIEVE_TX;
-	/*
-	 * If the driver is waiting for the length byte, then save it
-	 * and continue.
-	 *
-	 * Else, decrease the number of byte left in the current frame
-	 * and put the byte into the RX buffer
-	 */
-	if (rx_byte_left == 0) {
-		op &= ~SPI_OP_STORE_RX;
 
+	/* clear waiting transfer flag */
+	flags &= ~SPI_FLAG_WAIT_TRANSFER;
+
+#if DEBUG
+	Serial.print("Status: ");
+	Serial.println(status, DEC);
+#endif
+
+	if (status != STM_WAIT_LENGTH && rx_byte_left > 0)
+		rx_byte_left--;
+
+	/* handle state machine status */
+	switch(status) {
+	case STM_WAIT_LENGTH:
+		/* update indexes */
 		rx_length = val;
 		rx_byte_left = rx_length;
 		tx_last_ignore = 0;
+		rx_ignore_index = 0;
 
-		/*
-		 * If the main processor send a byte with length '0' it
-		 * means that it wants to know how many byte we need to
-		 * send. This work both for the first request, and to
-		 * build a valid frame length + payload
-		 */
-		if (val == 0)
-			op |= SPI_OP_LENGTH_TX;
-	} else {
-		flags &= ~SPI_FLAG_WAIT_TRANSFER;
-		op |= SPI_OP_STORE_RX;
-		rx_byte_left--;
+		/* Set up operations */
+		op &= ~SPI_OP_STORE_RX;		/* do not store */
+
+		if (rx_length == 0) {
+			op |= SPI_OP_LENGTH_TX;	/* get TX length */
+		} else {
+			/* update state machine status */
+			status = STM_CHECK_BYTE1;
+		}
+
+		break;
+	case STM_CHECK_BYTE1:
+		rx_buf_ignore[rx_ignore_index] = val;
+		rx_ignore_index++;
+		if (val == rx_ignore) {
+			/* Set up operations */
+			op &= ~SPI_OP_STORE_RX;	/* do not store */
+			/* update state machine status */
+			status = STM_CHECK_BYTE2;
+		} else {
+			/* Set up operations */
+			op |= SPI_OP_STORE_RX;	/* store */
+			/* update state machine status */
+			status = STM_STORE_BYTES;
+		}
+		break;
+	case STM_CHECK_BYTE2:
+		rx_buf_ignore[rx_ignore_index] = val;
+		rx_ignore_index++;
+		if (val == rx_ignore) {
+			/* Set up operations */
+			op |= SPI_OP_STORE_RX;	/* store */
+			/* update state machine status */
+			status = STM_STORE_BYTES;
+		} else {
+			/* Set up operations */
+			op &= ~SPI_OP_STORE_RX;	/* do not store */
+			/* update state machine status */
+			status = STM_IGNORE_BYTES;
+		}
+		break;
+	case STM_IGNORE_BYTES:
+		/* Set up operations */
+		op &= ~SPI_OP_STORE_RX;	/* do not store */
+		break;
+	case STM_STORE_BYTES:
+		/* Set up operations */
+		op |= SPI_OP_STORE_RX;	/* store */
+		break;
 	}
-
 
 	if (rx_byte_left == 0) {
 		/*
@@ -420,6 +462,11 @@ unsigned long StreamSPI::checkInterrupt(uint8_t val)
 		 * of the next frame.
 		 */
 		op &= ~SPI_OP_RETRIEVE_TX;
+		status = STM_WAIT_LENGTH;
+
+		#if DEBUG
+		Serial.println("EOF");
+		#endif
 	}
 
 out:
