@@ -519,7 +519,7 @@ size_t StreamSPI::write(uint8_t val)
 		if (n == 0) {
 			waitRequestByteTransfer();
 		} else if (getLengthTX()) {
-			raiseInterrupt();
+			waitRequestByteTransfer();
 		}
 	} while(n == 0);
 
