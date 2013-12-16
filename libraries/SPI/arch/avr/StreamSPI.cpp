@@ -316,7 +316,7 @@ uint8_t StreamSPI::retrieveTX()
 	 * send it. So here we can clear the transmission request flag
 	 * because we are going to do it.
 	 */
-	tx_flag &= ~SPI_TX_FLAG_REQ_TRANS;
+	flags &= ~SPI_FLAG_WAIT_TRANSFER;
 
 	#if DEBUG
 	Serial.print("TX retrieve  Head pre: ");
@@ -383,9 +383,6 @@ unsigned long StreamSPI::checkInterrupt(uint8_t val)
 	unsigned long op = 0;
 
 	op |= SPI_OP_RETRIEVE_TX;
-
-	/* clear waiting transfer flag */
-	flags &= ~SPI_FLAG_WAIT_TRANSFER;
 
 #if DEBUG
 	Serial.print("Status: ");
