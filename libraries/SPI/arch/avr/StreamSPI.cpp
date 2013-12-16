@@ -228,8 +228,14 @@ int StreamSPI::storeTX(uint8_t val)
 	 * FIXME here we can loose bytes because buffer is full and we cannot
 	 * do anything to consume it. It is duty of the program to consume it
 	 */
-	if (tx_head == tx_tail - 1 || (tx_tail == tx_buffer && tx_head == tx_buffer + buffer_size - 1))
+	if (tx_head == tx_tail - 1 || (tx_tail == tx_buffer && tx_head == tx_buffer + buffer_size - 1)) {
+		#if DEBUG
+		Serial.print("Buffer FULL");
+		Serial.print(val, HEX);
+		Serial.println(" ===");
+		#endif
 		return 0;	/* Buffer is full */
+	}
 
 	#if DEBUG
 	Serial.print("TX store  Head pre: ");
@@ -366,6 +372,11 @@ uint8_t StreamSPI::retrieveTX()
 
 uint8_t StreamSPI::getLengthTX()
 {
+	#if DEBUG
+	Serial.print("TX Len: ");
+	Serial.println(tx_length, DEC);
+	#endif
+
 	return tx_length;
 }
 
