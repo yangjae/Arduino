@@ -405,6 +405,7 @@ unsigned long StreamSPI::checkInterrupt(uint8_t val)
 		op &= ~SPI_OP_STORE_RX;		/* do not store */
 
 		if (rx_length == 0) {
+			op &= ~SPI_OP_RETRIEVE_TX;
 			op |= SPI_OP_LENGTH_TX;	/* get TX length */
 		} else {
 			/* update state machine status */
