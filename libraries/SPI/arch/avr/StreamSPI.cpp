@@ -491,7 +491,7 @@ out:
 ISR (SPI_STC_vect)
 {
 	unsigned long op;
-	uint8_t val;
+	uint8_t val = 0;
 	int err;
 
 	/* Do not handle interrupt on SPI collision */
@@ -513,8 +513,6 @@ ISR (SPI_STC_vect)
 
 	if (op & SPI_OP_RETRIEVE_TX)
 		val = StreamSPI0.retrieveTX();
-	else
-		val = 0;
 
 	if (op & SPI_OP_LENGTH_TX)
 		val = StreamSPI0.getLengthTX();
