@@ -513,8 +513,7 @@ ISR (SPI_STC_vect)
 
 	if (op & SPI_OP_RETRIEVE_TX)
 		val = StreamSPI0.retrieveTX();
-
-	if (op & SPI_OP_LENGTH_TX)
+	else
 		val = StreamSPI0.getLengthTX();
 
 	SPDR = val;
