@@ -491,13 +491,10 @@ out:
 ISR (SPI_STC_vect)
 {
 	unsigned long op;
-	uint8_t val = 0;
+	uint8_t val = 0, status;
 	int err;
 
-	/* Do not handle interrupt on SPI collision */
-	if (SPSR & 0x40) {
-		return;
-	}
+	status = SPSR; /* in order to clear flags */
 	val = SPDR;
 	op = StreamSPI0.checkInterrupt(val);
 
