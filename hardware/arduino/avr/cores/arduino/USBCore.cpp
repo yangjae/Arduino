@@ -60,6 +60,8 @@ const u8 STRING_PRODUCT[] PROGMEM = USB_PRODUCT;
 #define USB_MANUFACTURER "Arduino LLC"
 #elif USB_VID == 0x1b4f
 #define USB_MANUFACTURER "SparkFun"
+#elif USB_VID == 0x2A03
+#define USB_MANUFACTURER "Doghunter"
 #elif !defined(USB_MANUFACTURER)
 // Fall through to unknown if no manufacturer name was provided in a macro
 #define USB_MANUFACTURER "Unknown"
